@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from ..routers.journal_router import router as journal_router
+from ..routers.auth_router import router as auth_router
 
 # FastAPI app configuration with OpenAPI documentation
 app = FastAPI(
@@ -21,7 +22,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Include journal entry router
+# Include auth and journal routers
+app.include_router(auth_router)
 app.include_router(journal_router)
 
 @app.get("/", tags=["health"])

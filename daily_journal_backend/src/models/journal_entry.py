@@ -25,8 +25,9 @@ class JournalEntryUpdate(BaseModel):
 
 
 class JournalEntry(JournalEntryBase):
-    """Complete journal entry model with ID"""
+    """Complete journal entry model with ID, and user association"""
     id: int = Field(description="Unique identifier for the journal entry")
+    user_id: int = Field(description="ID of the user that owns the entry")
 
     class Config:
         from_attributes = True
@@ -36,6 +37,7 @@ class JournalEntry(JournalEntryBase):
                 "title": "First Day of Spring",
                 "notes": "Today felt like a fresh start. The weather was perfect...",
                 "mood": "content",
-                "date": "2024-03-20"
+                "date": "2024-03-20",
+                "user_id": 1
             }
         }
