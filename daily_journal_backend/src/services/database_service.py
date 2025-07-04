@@ -3,7 +3,7 @@ from typing import List, Optional
 from ..models.journal_entry import JournalEntry, JournalEntryCreate, JournalEntryUpdate
 
 class DatabaseService:
-    """In-memory database service for journal entries, partitioned by Clerk user ID (str)."""
+    """In-memory database service for journal entries, partitioned by Clerk user ID (str, from Clerk 'sub' claim only)."""
 
     def __init__(self):
         self._entries: List[JournalEntry] = []

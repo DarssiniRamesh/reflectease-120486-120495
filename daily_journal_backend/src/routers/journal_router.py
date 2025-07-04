@@ -4,18 +4,16 @@ from fastapi import APIRouter, HTTPException, Query, Depends, Header
 from fastapi import status
 from ..models.journal_entry import JournalEntry, JournalEntryCreate, JournalEntryUpdate
 from ..services.database_service import db_service
-from jose import jwt, JWTError
 import requests
 import os
+import jwt
 
 CLERK_JWT_ISSUER = os.getenv("CLERK_JWT_ISSUER", "https://api.clerk.dev")
-CLERK_JWT_KEY = os.getenv("CLERK_JWT_KEY")  # Optional, not needed for public key rotation
-CLERK_JWT_PUBLIC_KEY_URL = os.getenv("CLERK_JWT_PUBLIC_KEY_URL") # For fetching public keys if needed
-CLERK_JWT_AUDIENCE = os.getenv("CLERK_JWT_AUDIENCE")  # Optional, for added verification
+CLERK_JWT_PUBLIC_KEY_URL = os.getenv("CLERK_JWT_PUBLIC_KEY_URL")
 
 def get_clerk_public_key():
     """
-    Fetch Clerk public key once and cache it (for demo; in production use proper JWKS keys)
+    Fetch Clerk public key once and cache it (use proper JWKS in production).
     """
     if not hasattr(get_clerk_public_key, "cache"):
         if not CLERK_JWT_PUBLIC_KEY_URL:
@@ -29,21 +27,21 @@ def get_clerk_public_key():
 # PUBLIC_INTERFACE
 async def verify_clerk_jwt(authorization: str = Header(..., description="Bearer Clerk JWT Token")) -> str:
     """
-    Dependency to verify Clerk JWT from Authorization header.
+    FastAPI dependency to check & decode Clerk JWT, returning Clerk user ID.
 
-    Returns Clerk user ID on success. Raises 401 otherwise.
+    This ensures every endpoint using this dependency is protected by Clerk.
+    Raises HTTP_401 if missing or invalid.
     """
     if not authorization.startswith("Bearer "):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing Bearer token")
     token = authorization[len("Bearer "):]
-    # For demo—do not verify exp/iat etc, but production will need
     try:
         public_key = get_clerk_public_key()
         payload = jwt.decode(
             token,
             public_key,
             algorithms=["RS256"],
-            options={"verify_aud": False},  # Could enforce aud if set in Clerk
+            options={"verify_aud": False},
             issuer=CLERK_JWT_ISSUER,
         )
         clerk_user_id = payload.get("sub") or payload.get("user_id")
@@ -52,10 +50,8 @@ async def verify_clerk_jwt(authorization: str = Header(..., description="Bearer 
                 status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid Clerk JWT: user_id missing"
             )
         return clerk_user_id
-    except JWTError:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid or expired Clerk JWT")
     except Exception:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid Clerk JWT")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid or expired Clerk JWT")
 
 router = APIRouter(
     prefix="/entries",

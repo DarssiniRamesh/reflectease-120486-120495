@@ -5,7 +5,7 @@ from ..routers.journal_router import router as journal_router
 # FastAPI app configuration with OpenAPI documentation
 app = FastAPI(
     title="Daily Journal API",
-    description="A lightweight REST API for managing daily journal entries with mood tracking and filtering capabilities.",
+    description="A lightweight REST API for managing daily journal entries with mood tracking and filtering capabilities. All endpoints require valid Clerk authentication.",
     version="1.0.0",
     docs_url="/docs",
     redoc_url="/redoc",
@@ -21,14 +21,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Only include the journal router (auth endpoints deprecated/removed)
+# Include only Clerk-protected journal endpoints
 app.include_router(journal_router)
 
 @app.get("/", tags=["health"])
 def health_check():
     """
     Health check endpoint to verify the API is running.
-    
+
     Returns a simple message indicating the service is healthy.
     """
-    return {"message": "Daily Journal API is healthy", "version": "1.0.0"}
+    return {"message": "Daily Journal API is healthy and requires Clerk authentication", "version": "1.0.0"}
