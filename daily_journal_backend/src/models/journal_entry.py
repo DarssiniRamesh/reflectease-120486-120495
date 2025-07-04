@@ -2,7 +2,6 @@ from datetime import date
 from typing import Optional
 from pydantic import BaseModel, Field
 
-
 class JournalEntryBase(BaseModel):
     """Base model for journal entries with common fields"""
     title: str = Field(min_length=1, max_length=500, description="Title of the journal entry")
@@ -10,11 +9,9 @@ class JournalEntryBase(BaseModel):
     mood: str = Field(min_length=1, max_length=50, description="Mood tag for the entry")
     date: date = Field(description="Date of the journal entry")
 
-
 class JournalEntryCreate(JournalEntryBase):
     """Model for creating a new journal entry"""
     pass
-
 
 class JournalEntryUpdate(BaseModel):
     """Model for updating an existing journal entry"""
@@ -23,11 +20,10 @@ class JournalEntryUpdate(BaseModel):
     mood: Optional[str] = Field(min_length=1, max_length=50, description="Mood tag for the entry")
     date: Optional[date] = Field(description="Date of the journal entry")
 
-
 class JournalEntry(JournalEntryBase):
     """Complete journal entry model with ID, and user association"""
     id: int = Field(description="Unique identifier for the journal entry")
-    user_id: int = Field(description="ID of the user that owns the entry")
+    user_id: str = Field(description="Clerk user ID of the entry owner")
 
     class Config:
         from_attributes = True
@@ -38,6 +34,6 @@ class JournalEntry(JournalEntryBase):
                 "notes": "Today felt like a fresh start. The weather was perfect...",
                 "mood": "content",
                 "date": "2024-03-20",
-                "user_id": 1
+                "user_id": "user_2a3JnQo9Wo8Qlb"  # Example Clerk ID
             }
         }

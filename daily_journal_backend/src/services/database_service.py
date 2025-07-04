@@ -3,7 +3,7 @@ from typing import List, Optional
 from ..models.journal_entry import JournalEntry, JournalEntryCreate, JournalEntryUpdate
 
 class DatabaseService:
-    """In-memory database service for journal entries, per-user."""
+    """In-memory database service for journal entries, partitioned by Clerk user ID (str)."""
 
     def __init__(self):
         self._entries: List[JournalEntry] = []
@@ -11,7 +11,8 @@ class DatabaseService:
         self._init_demo_data()
 
     def _init_demo_data(self):
-        """Initialize with demo data for an initial demo user (user_id=1)"""
+        """Initialize with demo data for an initial demo Clerk user."""
+        demo_clerk_user_id = "user_demoClerk123"
         demo_entries = [
             {
                 "title": "First Day of Spring",
@@ -45,8 +46,6 @@ class DatabaseService:
             }
         ]
 
-        demo_user_id = 1  # Demo user for initial journal demo
-
         for entry_data in demo_entries:
             entry = JournalEntry(
                 id=self._next_id,
@@ -54,14 +53,14 @@ class DatabaseService:
                 notes=entry_data["notes"],
                 mood=entry_data["mood"],
                 date=date.fromisoformat(entry_data["date"]),
-                user_id=demo_user_id
+                user_id=demo_clerk_user_id
             )
             self._entries.append(entry)
             self._next_id += 1
 
     # PUBLIC_INTERFACE
-    def get_all_entries(self, user_id: int) -> List[JournalEntry]:
-        """Get all journal entries for a user, sorted by date (newest first)"""
+    def get_all_entries(self, user_id: str) -> List[JournalEntry]:
+        """Get all journal entries for a Clerk user (by user_id string), sorted by date (newest first)."""
         return sorted(
             [e for e in self._entries if e.user_id == user_id],
             key=lambda x: x.date,
@@ -69,16 +68,16 @@ class DatabaseService:
         )
 
     # PUBLIC_INTERFACE
-    def get_entry_by_id(self, entry_id: int, user_id: int) -> Optional[JournalEntry]:
-        """Get a specific journal entry (owned by user) by ID"""
+    def get_entry_by_id(self, entry_id: int, user_id: str) -> Optional[JournalEntry]:
+        """Get a specific journal entry (owned by Clerk user) by ID."""
         for entry in self._entries:
             if entry.id == entry_id and entry.user_id == user_id:
                 return entry
         return None
 
     # PUBLIC_INTERFACE
-    def create_entry(self, entry_data: JournalEntryCreate, user_id: int) -> JournalEntry:
-        """Create a new journal entry for a user"""
+    def create_entry(self, entry_data: JournalEntryCreate, user_id: str) -> JournalEntry:
+        """Create a new journal entry for a Clerk user (user_id)."""
         new_entry = JournalEntry(
             id=self._next_id,
             title=entry_data.title,
@@ -92,12 +91,11 @@ class DatabaseService:
         return new_entry
 
     # PUBLIC_INTERFACE
-    def update_entry(self, entry_id: int, update_data: JournalEntryUpdate, user_id: int) -> Optional[JournalEntry]:
-        """Update an existing journal entry (must be owned by user)"""
+    def update_entry(self, entry_id: int, update_data: JournalEntryUpdate, user_id: str) -> Optional[JournalEntry]:
+        """Update a journal entry (must be owned by Clerk user)"""
         entry = self.get_entry_by_id(entry_id, user_id)
         if not entry:
             return None
-
         # Update only provided fields
         if update_data.title is not None:
             entry.title = update_data.title
@@ -107,12 +105,11 @@ class DatabaseService:
             entry.mood = update_data.mood
         if update_data.date is not None:
             entry.date = update_data.date
-
         return entry
 
     # PUBLIC_INTERFACE
-    def delete_entry(self, entry_id: int, user_id: int) -> bool:
-        """Delete a journal entry by ID (must be owned by user)"""
+    def delete_entry(self, entry_id: int, user_id: str) -> bool:
+        """Delete a journal entry by ID (must be owned by Clerk user)"""
         for i, entry in enumerate(self._entries):
             if entry.id == entry_id and entry.user_id == user_id:
                 del self._entries[i]
@@ -120,14 +117,14 @@ class DatabaseService:
         return False
 
     # PUBLIC_INTERFACE
-    def get_entries_by_mood(self, user_id: int, mood: str) -> List[JournalEntry]:
-        """Get a user's journal entries filtered by mood"""
+    def get_entries_by_mood(self, user_id: str, mood: str) -> List[JournalEntry]:
+        """Get a Clerk user's journal entries filtered by mood"""
         filtered_entries = [entry for entry in self._entries if entry.user_id == user_id and entry.mood.lower() == mood.lower()]
         return sorted(filtered_entries, key=lambda x: x.date, reverse=True)
 
     # PUBLIC_INTERFACE
-    def get_entries_by_date_range(self, user_id: int, start_date: date, end_date: date) -> List[JournalEntry]:
-        """Get a user's journal entries within a date range"""
+    def get_entries_by_date_range(self, user_id: str, start_date: date, end_date: date) -> List[JournalEntry]:
+        """Get a Clerk user's journal entries within a date range"""
         filtered_entries = [
             entry for entry in self._entries
             if entry.user_id == user_id and start_date <= entry.date <= end_date
